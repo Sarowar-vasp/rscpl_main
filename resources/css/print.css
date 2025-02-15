@@ -1,0 +1,97 @@
+:root {
+    --section-height: 50vh; /* Default height */
+}
+
+.section {
+    height: var(--section-height); /* Use variable for height */
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap:1rem;
+    padding: 10px;
+    page-break-inside: avoid;
+}
+
+.section-header,
+.section-footer {
+    background-color: #fcfcfc;
+    padding: 5px;
+    height: 15vh;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+
+thead {
+    display: table-header-group; /* Repeat the header on each printed page */
+}
+
+tbody {
+    display: table-row-group;
+}
+
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+    }
+    @page {
+        size: A4; /* Set paper size to A4 */
+        scale: 1;
+    }
+    .page {
+        page-break-after: always;
+    }
+
+    .section {
+        height: var(--section-height); /* Use variable for height */
+        box-sizing: border-box;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 10px;
+        page-break-inside: avoid;
+    }
+
+    .section-header{
+        background-color: #ffd7d7;
+        padding: 5px;
+        height: 16vh;
+    }
+    .section-footer {
+        background-color: #ffd7d7;
+        padding: 5px;
+        height: 12vh;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    table,
+    th,
+    td {
+        border: 1px solid black;
+    }
+
+    th,
+    td {
+        padding: 2px;
+        text-align: left;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    tbody {
+        display: table-row-group;
+    }
+}

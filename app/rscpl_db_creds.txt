@@ -1,0 +1,3 @@
+db = rscpl_db
+user = rscpl_user 
+pass = Wi9fQIWSkWgB
