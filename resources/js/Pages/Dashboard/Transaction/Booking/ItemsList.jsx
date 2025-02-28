@@ -276,7 +276,7 @@ const ItemsList = (props) => {
 export default ItemsList
 
 const Pagination = ({ bookings, reload, perPage, searchTxt }) => {
-    if(perPage >= bookings.total) return null;
+    if (perPage >= bookings.total) return null;
 
     return (
         <div className="flex justify-between p-4">
@@ -433,8 +433,11 @@ const DeliveryProof = (props) => {
     };
 
     const handlePrint = () => {
+        if (!booking.document?.file_location) {
+            return null;
+        }
         const printWindow = window.open('', '_blank');
-        const imageUrl = `/storage/${booking.document.file_location}`; // URL of the image to print
+        const imageUrl = `/storage/${booking.document?.file_location}`;
 
         printWindow.document.write(`
             <html>
@@ -489,14 +492,18 @@ const DeliveryProof = (props) => {
             <Dialog visible={openDialog} modal onHide={() => setOpenDialog(false)} className="rounded-md m-4 w-full md:w-1/2 p-4 bg-white">
                 {!toChange ?
                     <div className="">
-                        <img
-                            className="w-full border rounded-lg shadow-md"
-                            src={`/storage/${booking.document.file_location}`}
-                            alt=""
-                        />
+                        {booking.document ?
+                            <img
+                                className="w-full border rounded-lg shadow-md"
+                                src={`/storage/${booking.document?.file_location}`}
+                                alt=""
+                            />
+                            : null}
                         <hr className='my-4' />
                         <div className="flex justify-end gap-2">
-                            <Button onClick={handlePrint} variant="contained" size="small" color="primary">Print</Button>
+                            {booking.document ?
+                                <Button onClick={handlePrint} variant="contained" size="small" color="primary">Print</Button>
+                                : null}
                             <Button onClick={() => setToChange(true)} variant="contained" size="small" color="warning">Change</Button>
                             <Button onClick={() => setOpenDialog(false)} variant="contained" size="small" color="secondary">Close</Button>
                         </div>
