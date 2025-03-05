@@ -46,6 +46,11 @@ class PagesController extends Controller
         return Inertia::render('Dashboard/Master/Rate/index');
     }
 
+    function beat_master()
+    {
+        return Inertia::render('Dashboard/Master/Beat/index');
+    }
+
     function branch_master()
     {
 
