@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('manifest_no');
             $table->date('trip_date');
+            $table->string('beat_no')->nullable()->default('');
             $table->foreignId('from_location')->constrained('locations', 'id')->nullable();
             $table->foreignId('to_location')->constrained('locations', 'id')->nullable();
             $table->foreignId('lorry_id')->constrained('lorries')->cascadeOnDelete();

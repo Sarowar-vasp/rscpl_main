@@ -73,7 +73,11 @@ Route::middleware('auth')->group(function () {
             Route::put('/master/data/location/{location}', 'update');
             Route::delete('/master/data/location/{location}', 'destroy');
         });
-
+        Route::controller(LorryController::class)->group(function () {
+            Route::post('/master/data/new/lorry', 'store');
+            Route::put('/master/data/lorry/{lorry}', 'update');
+            Route::delete('/master/data/lorry/{lorry}', 'destroy');
+        });
         Route::controller(BeatController::class)->group(function () {
             Route::post('/master/data/new/beat', 'store');
             Route::put('/master/data/beat/{beat}', 'update');
@@ -84,10 +88,6 @@ Route::middleware('auth')->group(function () {
             Route::post('/master/data/new/rate', 'store');
             Route::put('/master/data/rate/{rate}', 'update');
             Route::delete('/master/data/rate/{rate}', 'destroy');
-        });
-
-        Route::controller(LorryController::class)->group(function () {
-            Route::delete('/master/data/lorry/{lorry}', 'destroy');
         });
 
         Route::controller(BranchController::class)->group(function () {
@@ -168,9 +168,11 @@ Route::middleware('auth')->group(function () {
     Route::controller(BeatController::class)->group(function () {
         Route::get('/master/data/beats', 'get_items');
     });
-
+    
     Route::controller(LorryController::class)->group(function () {
+        Route::get('/master/data/lorries', 'get_lorries');
     });
+
 
     Route::controller(BranchController::class)->group(function () {
         Route::get('/master/data/branches', 'get_items');

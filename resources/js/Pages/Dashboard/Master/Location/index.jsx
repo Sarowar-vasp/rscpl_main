@@ -91,7 +91,6 @@ const LocationList = (props) => {
 								<tr className="bg-gray-100">
 									<th className="text-center p-2">Sl.</th>
 									<th className="text-left p-2">Name</th>
-									<th className="text-left p-2">Beat No</th>
 									<th className="text-left p-2">Address</th>
 									<th className="text-center p-2">Actions</th>
 								</tr>
@@ -101,7 +100,6 @@ const LocationList = (props) => {
 									<tr key={i} className="border-b">
 										<td className="text-center py-2">{i + (locations.per_page * (locations.current_page - 1)) + 1}</td>
 										<td className="capitalize py-2">{location.name}</td>
-										<td className="py-2">{location.beat_no}</td>
 										<td className="py-2">{location.address}</td>
 										<td className="flex gap-4 justify-center items-center py-2">
 											{privilege > 5 && <EditLocation {...props} location={location} />}
@@ -148,7 +146,6 @@ const EditLocation = ({ reload, toast, location }) => {
 	const [openDialog, setOpenDialog] = useState(false);
 	const [formData, setFormData] = useState({
 		name: location.name,
-		beat_no: location.beat_no,
 		address: location.address,
 	});
 
@@ -186,17 +183,7 @@ const EditLocation = ({ reload, toast, location }) => {
 							required
 						/>
 					</div>
-					<div className="flex flex-col">
-						<label htmlFor="beat_no" className="mb-1">Beat No</label>
-						<input
-							type="text"
-							id="beat_no"
-							name="beat_no"
-							value={formData.beat_no}
-							onChange={handleChange}
-							className="border rounded px-2 py-1"
-						/>
-					</div>
+					
 					<div className="flex flex-col">
 						<label htmlFor="address" className="mb-1">Address</label>
 						<textarea
@@ -253,12 +240,10 @@ const AddNewLocation = ({ reload, toast }) => {
 		e.preventDefault();
 		const formData = new FormData(e.target);
 		const name = formData.get("name");
-		const beat_no = formData.get("beat_no");
 		const address = formData.get("address");
 
 		axios.post("/master/data/new/location", {
 			name,
-			beat_no,
 			address,
 		})
 			.then(res => {
@@ -280,11 +265,6 @@ const AddNewLocation = ({ reload, toast }) => {
 						<div className="flex flex-col">
 							<label htmlFor="name" className="mb-2 text-xs md:text-sm font-medium text-gray-700">Name</label>
 							<input type="text" name="name" id="name" required className="border-teal-100 focus:border-teal-500 focus:ring-0 rounded-sm shadow-xs px-4" />
-						</div>
-
-						<div className="flex flex-col">
-							<label htmlFor="beat_no" className="mb-2 text-xs md:text-sm font-medium text-gray-700">Beat No</label>
-							<input type="text" name="beat_no" id="beat_no" className="border-teal-100 focus:border-teal-500 focus:ring-0 rounded-sm shadow-xs px-4" />
 						</div>
 
 						<div className="flex flex-col">

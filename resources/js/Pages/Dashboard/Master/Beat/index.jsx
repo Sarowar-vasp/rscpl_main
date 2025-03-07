@@ -5,6 +5,7 @@ import { BreadCrumb } from 'primereact/breadcrumb'
 import { Dialog } from 'primereact/dialog'
 import { Toast } from 'primereact/toast'
 import React, { useState, useEffect, useRef } from 'react'
+import { FaEdit, FaTrash } from 'react-icons/fa'
 
 
 const BeatItem = (props) => {
@@ -54,7 +55,7 @@ const BeatItem = (props) => {
                         </div>
                         <hr />
                         <div className="flex flex-col gap-4">
-                            <ItemList beats={beats} reload={loadData} toast={toast} privilege={privilege} perPage={perPage} setPerPage={setPerPage} searchTxt={searchTxt} setSearchTxt={setSearchTxt} />
+                            <ItemList beats={beats} locations={locations} reload={loadData} toast={toast} privilege={privilege} perPage={perPage} setPerPage={setPerPage} searchTxt={searchTxt} setSearchTxt={setSearchTxt} />
                         </div>
                     </div>
                 )}
@@ -68,7 +69,7 @@ export default BeatItem
 
 
 const ItemList = (props) => {
-    const { beats, reload, privilege, perPage, setPerPage, searchTxt, setSearchTxt } = props;
+    const { beats, locations, reload, privilege, perPage, setPerPage, searchTxt, setSearchTxt } = props;
     const handleLimitChange = (e) => setPerPage(e.target.value);
     const handleSearch = (e) => setSearchTxt(e.target.value.replace(/[^a-zA-Z0-9\s]/g, ''));
 
@@ -116,7 +117,7 @@ const ItemList = (props) => {
                                 ))}
                             </tbody>
                         </table>
-                        <Pagination beats={beats} reload={reload} perPage={perPage} searchTxt={searchTxt} />
+                        <Pagination items={beats} reload={reload} perPage={perPage} searchTxt={searchTxt} />
                     </>
                 ) : <span className="text-gray-500 italic">No beat found!</span>}
             </div>
@@ -204,13 +205,12 @@ const AddNewItem = ({ reload, toast, locations }) => {
 }
 
 
-
 const EditBeat = ({ reload, toast, beat, locations }) => {
     const [openDialog, setOpenDialog] = useState(false);
     const [formData, setFormData] = useState({
-        beat_no: rate.beat_no,
-        location_id: rate.location_id,
-        rate: rate.rate,
+        beat_no: beat.beat_no,
+        location_id: beat.location_id,
+        rate: beat.rate,
     });
 
     const handleChange = (e) => {
@@ -315,3 +315,24 @@ const DeleteBeat = ({ reload, toast, beat }) => {
         </>
     );
 }
+
+
+const Pagination = ({ items, reload, perPage, searchTxt }) => (
+    <div className="flex justify-between p-4">
+        <span>Showing {items.from} to {items.to} of {items.total} items</span>
+        <ul className="flex gap-3">
+            {items.links.map((link, index) => {
+                let page = 1;
+                if (link.url) {
+                    const urlParams = new URLSearchParams(new URL(link.url).search);
+                    page = urlParams.get('page');
+                }
+                return (
+                    <li key={index} className={`text-md font-semibold ${link.active ? 'underline' : ''}`}>
+                        <button onClick={() => reload({ page, per_page: perPage, search: searchTxt })} dangerouslySetInnerHTML={{ __html: link.label }} />
+                    </li>
+                );
+            })}
+        </ul>
+    </div>
+);

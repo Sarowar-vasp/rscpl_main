@@ -26,8 +26,7 @@ class LocationController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('address', 'LIKE', "%{$search}%")
-                    ->orWhere('beat_no', 'LIKE', "%{$search}%");
+                    ->orWhere('address', 'LIKE', "%{$search}%");
             });
         }
 
@@ -54,7 +53,6 @@ class LocationController extends Controller
 
         $request->validate([
             'name' => 'required|string',
-            'beat_no' => 'nullable|string',
             'address' => 'nullable|string',
         ]);
 
@@ -84,7 +82,6 @@ class LocationController extends Controller
     {
         $request->validate([
             'name' => 'nullable|string',
-            'beat_no' => 'nullable|string',
             'address' => 'nullable|string',
         ]);
 

@@ -16,8 +16,8 @@ const NewMenuItems = [
 				children: []
 			},
 			{
-				name: 'Rates',
-				url: '/master/rates',
+				name: 'Beat Rates',
+				url: '/master/beats',
 				children: []
 			},
 			{

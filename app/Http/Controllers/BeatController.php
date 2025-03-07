@@ -17,11 +17,9 @@ class BeatController extends Controller
         $orderBy = $request->input('order_by', 'beat_no');
         $order = $request->input('order', 'asc');
         $search = $request->input('search');
-        $query = Beat::query();
 
-        if ($branchId) {
-            $query->where('branch_id', $branchId);
-        }
+        $query = Beat::with('location')->where('branch_id', $branchId);
+
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('beat_no', 'LIKE', "%{$search}%")
@@ -29,57 +27,59 @@ class BeatController extends Controller
             });
         }
 
-        if ($paginate && $paginate == 'no') {
-            $ln = $query->orderBy($orderBy, $order)->get();
-            return response()->json($ln);
-        } else {
-            $ls = $query->orderBy($orderBy, $order)->paginate($perPage);
-            return response()->json($ls);
-        }
+        $query->orderBy($orderBy, $order);
+
+        return response()->json($paginate === 'no' ? $query->get() : $query->paginate($perPage));
     }
 
     public function get_locations($beat_no)
     {
         $branchId = optional($this->branch)->id;
-        $query = Beat::query();
-        $query->where('branch_id', $branchId)->where('beat_no',$beat_no);
-        $beats = $query->with('location')->get();
+        $beats = Beat::with('location')
+            ->where('branch_id', $branchId)
+            ->where('beat_no', $beat_no)
+            ->get();
+
         return response()->json($beats);
     }
-    
+
     public function get_item(Beat $beat)
     {
         $branchId = optional($this->branch)->id;
-        if ($branchId && $beat->branch_id !== $branchId) {
+        if ($beat->branch_id !== $branchId) {
             return response()->json(['message' => 'Unauthorized to access this beat'], 403);
         }
 
-        return response()->json($beat->with('location'));
+        return response()->json($beat->load('location'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'beat_no' => 'required|string',
-            'location_id' => 'nullable|integer',
+            'location_id' => 'nullable|integer|exists:locations,id',
             'rate' => 'nullable|numeric',
         ]);
 
         try {
             $branchId = optional($this->branch)->id;
-            $data = $request->all();
-            $data['branch_id'] = $branchId;
 
-            $beat = Beat::create($data);
+            if ($request->location_id && Beat::where('beat_no', $request->beat_no)->where('location_id', $request->location_id)->exists()) {
+                return response()->json(['message' => 'Location already assigned to this beat number'], 400);
+            }
+
+            $beat = Beat::create(array_merge($request->all(), ['branch_id' => $branchId]));
+
             $user = Auth::user();
             ActivityLog::create([
                 'title' => 'Beat Added',
-                'activity' => 'Beat (' . $beat->beat_no . ') has been added !',
+                'activity' => "Beat ({$beat->beat_no}) has been added!",
                 'user_id' => $user->id,
                 'branch_id' => $user->branch->id,
-                'created_at' => now()
+                'created_at' => now(),
             ]);
-            return response()->json(['message' => 'Beat has been created successfully.', 'data' => $beat], 201);
+
+            return response()->json(['message' => 'Beat created successfully.', 'data' => $beat], 201);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to create beat', 'error' => $e->getMessage()], 400);
         }
@@ -88,26 +88,32 @@ class BeatController extends Controller
     public function update(Request $request, Beat $beat)
     {
         $request->validate([
-            'location_id' => 'nullable|string',
+            'location_id' => 'nullable|integer|exists:locations,id',
             'rate' => 'nullable|numeric',
         ]);
 
         try {
             $branchId = optional($this->branch)->id;
-            if ($branchId && $beat->branch_id !== $branchId) {
+            if ($beat->branch_id !== $branchId) {
                 return response()->json(['message' => 'Unauthorized to update this beat'], 403);
             }
 
+            if ($request->location_id && Beat::where('beat_no', $beat->beat_no)->where('location_id', $request->location_id)->where('id', '!=', $beat->id)->exists()) {
+                return response()->json(['message' => 'Location already assigned to this beat number'], 400);
+            }
+
             $beat->update($request->all());
+
             $user = Auth::user();
             ActivityLog::create([
                 'title' => 'Beat Updated',
-                'activity' => 'Beat (' . $beat->beat_no . ') has been updated !',
+                'activity' => "Beat ({$beat->beat_no}) has been updated!",
                 'user_id' => $user->id,
                 'branch_id' => $user->branch->id,
-                'created_at' => now()
+                'created_at' => now(),
             ]);
-            return response()->json(['message' => 'Beat has been updated successfully.', 'data' => $beat], 200);
+
+            return response()->json(['message' => 'Beat updated successfully.', 'data' => $beat], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to update beat', 'error' => $e->getMessage()], 400);
         }
@@ -117,20 +123,23 @@ class BeatController extends Controller
     {
         try {
             $branchId = optional($this->branch)->id;
-            if ($branchId && $beat->branch_id !== $branchId) {
+            if ($beat->branch_id !== $branchId) {
                 return response()->json(['message' => 'Unauthorized to delete this beat'], 403);
             }
+
             $beat_no = $beat->beat_no;
             $beat->delete();
+
             $user = Auth::user();
             ActivityLog::create([
                 'title' => 'Beat Deleted',
-                'activity' => 'Beat (' . $beat_no . ') has been deleted !',
+                'activity' => "Beat ({$beat_no}) has been deleted!",
                 'user_id' => $user->id,
                 'branch_id' => $user->branch->id,
-                'created_at' => now()
+                'created_at' => now(),
             ]);
-            return response()->json(['message' => 'Beat has been deleted successfully.'], 200);
+
+            return response()->json(['message' => 'Beat deleted successfully.'], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to delete beat', 'error' => $e->getMessage()], 400);
         }
