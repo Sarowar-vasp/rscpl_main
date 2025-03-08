@@ -23,6 +23,7 @@ const index = (props) => {
 
 	useEffect(() => {
 		loadData();
+		console.log(props);
 	}, [])
 
 

@@ -21,6 +21,7 @@ class ManifestController extends Controller
         $orderBy = $request->input('order_by', 'created_at');
         $order = $request->input('order', 'desc');
         $search = $request->input('search', '');
+        $paginate = $request->input('paginate', 'yes');
 
         $query = Manifest::query();
 
@@ -42,8 +43,12 @@ class ManifestController extends Controller
             });
         }
 
+        if ($paginate == 'no') {
+            $manifests = $query->with(['lorry'])->orderBy($orderBy, $order)->get();
+        } else {
+            $manifests = $query->with(['lorry'])->orderBy($orderBy, $order)->paginate($perPage);
+        }
 
-        $manifests = $query->with(['from_location', 'to_location', 'lorry'])->orderBy($orderBy, $order)->paginate($perPage);
         return response()->json($manifests);
     }
 
@@ -55,8 +60,8 @@ class ManifestController extends Controller
             $manifest->load([
                 'bookings.statuses',
                 'bookings.items.item_quantities',
-                'bookings.consignor.location', 
-                'bookings.consignee.location', 
+                'bookings.consignor.location',
+                'bookings.consignee.location',
                 'branch',
                 'lorry'
             ]);
@@ -66,13 +71,11 @@ class ManifestController extends Controller
         }
     }
 
-
     public function store(Request $request)
     {
         $request->validate([
             'trip_date' => 'required|date',
-            'to_location' => 'required|integer',
-            'from_location' => 'required|integer',
+            'beat_no' => 'nullable|string',
             'lorry_id' => 'nullable|integer',
         ]);
 
@@ -141,7 +144,7 @@ class ManifestController extends Controller
     {
         DB::beginTransaction();
         $branchId = optional($this->branch)->id;
-        
+
         if ($manifest->branch_id !== $branchId) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
@@ -149,15 +152,15 @@ class ManifestController extends Controller
         try {
             $bookings = $manifest->bookings;
 
-            if($bookings->count() > 0){
+            if ($bookings->count() > 0) {
                 $allPending = $bookings->every(function ($booking) {
                     return $booking->statuses()->count() == 0 || $booking->statuses()->where('active', 1)->where('status', 'pending')->exists();
                 });
-    
+
                 if (!$allPending) {
                     return response()->json(['error' => 'Only manifests with pending bookings can be deleted.'], 403);
                 }
-                
+
                 foreach ($bookings as $booking) {
                     $bookingController = new BookingController();
                     $bookingController->destroy($booking);
@@ -192,7 +195,7 @@ class ManifestController extends Controller
     public function is_deletable(Manifest $manifest)
     {
         $branchId = optional($this->branch)->id;
-        
+
         if ($manifest->branch_id !== $branchId) {
             return response()->json([
                 'is_deletable' => false,

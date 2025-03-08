@@ -7,7 +7,7 @@ import ManifestDetails from './ManifestDetails';
 const ItemsList = (props) => {
     const { manifests, reload } = props;
     const [searchTxt, setSearchTxt] = useState('');
-    const [perPage, setPerPage] = useState(10);
+    const [perPage, setPerPage] = useState(20);
 
     const handleLimitChange = (e) => setPerPage(e.target.value);
     let timeoutId;
@@ -25,7 +25,7 @@ const ItemsList = (props) => {
         <div className="p-3 md:px-4 md:py-6 flex flex-col gap-2 rounded-md shadow-sm">
             <div className="flex justify-between px-2">
                 <select value={perPage} onChange={handleLimitChange}>
-                    {[5, 10, 20, 50, 100].map(num => <option key={num} value={num}>{num}</option>)}
+                    {[20, 50, 100].map(num => <option key={num} value={num}>{num}</option>)}
                 </select>
                 <input type="text" placeholder="Search..." onChange={handleSearch} />
             </div>
@@ -42,8 +42,7 @@ const ItemsList = (props) => {
                                     <tr>
                                         <th className="text-center py-3">Sl.</th>
                                         <th className="text-left">Manifest</th>
-                                        <th className="text-left">From Location</th>
-                                        <th className="text-left">To Location</th>
+                                        <th className="text-left">Beat No</th>
                                         <th className="text-left">Trip Date</th>
                                         <th className="text-left">Vehicle Number</th>
                                         <th></th>
@@ -54,8 +53,7 @@ const ItemsList = (props) => {
                                         <tr key={i} className="border">
                                             <td className='text-center py-2'>{i + (manifests.per_page * (manifests.current_page - 1)) + 1}</td>
                                             <td>{manifest.manifest_no}</td>
-                                            <td>{manifest.from_location?.name}</td>
-                                            <td>{manifest.to_location?.name}</td>
+                                            <td>{manifest.beat_no}</td>
                                             <td>
                                                 {new Date(manifest.trip_date).toLocaleDateString('en-GB')}
                                             </td>

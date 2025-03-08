@@ -16,6 +16,4 @@ class Location extends Model
         return $this->belongsTo(Branch::class);
     }
 
-    
-
 }

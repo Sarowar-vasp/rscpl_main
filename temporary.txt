@@ -1,0 +1,23 @@
+
+// beats is grouped by beat_no
+
+
+
+const beatsArray = Object.entries(beats).map(([beatNo, beatGroup]) => ({
+        beatNo,
+        locations: beatGroup.map(beat => beat.location)
+    }));
+
+useEffect(() => {
+        if (selectedBeatNo && beatsArray) {
+            const selectedBeat = beatsArray.find(beat => beat.beatNo === selectedBeatNo);
+            setLocations(selectedBeat ? selectedBeat.locations : []);
+        } else {
+            setLocations([]);
+        }
+}, [selectedBeatNo]);
+
+
+// update previous manifest data structure
+
+ ALTER TABLE `manifests` DROP INDEX `manifests_to_location_foreign`; 

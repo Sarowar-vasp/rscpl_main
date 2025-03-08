@@ -1,34 +1,41 @@
 import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
 import React, { useRef, useState } from 'react'
+import { useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 
 const AddNewItem = (props) => {
-    const { locations, reload} = props;
+    const { beats, reload } = props;
     const [openDialog, setOpenDialog] = useState(false);
     const [formInfo, setFormInfo] = useState({
         trip_date: new Date(),
-        from_location: '',
-        to_location: '',
+        beat_no: '',
         lorry_id: '',
     });
 
     const privilege = props.auth.user.role.privilege_index;
-    if(privilege <=5) return null;
-    
+    if (privilege <= 5) return null;
+
     const toast = useRef();
     const [lorries, setLorries] = useState(props.lorries);
+
+    const beatsArray = Object.entries(beats).map(([beatNo, beatGroup]) => ({
+        beatNo,
+        locations: beatGroup.map(beat => beat.location)
+    }));
+
+
 
     const handleSubmit = (e) => {
         e.preventDefault();
         axios.post('/data/manifest/new', { ...formInfo })
             .then(res => {
                 reload();
+                console.log(res);
                 setFormInfo({
                     trip_date: new Date(),
-                    from_location: '',
-                    to_location: '',
+                    beat_no: '',
                     lorry_id: '',
                 });
                 setOpenDialog(false);
@@ -38,7 +45,6 @@ const AddNewItem = (props) => {
             });
     }
 
-    
 
     return (
         <>
@@ -50,7 +56,23 @@ const AddNewItem = (props) => {
                     New manifest
                 </h3>
                 <form onSubmit={handleSubmit} className="space-y-4 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <div className="flex flex-col">
+                            <label htmlFor="beat_no" className="mb-2 text-xs md:text-sm font-medium text-gray-700">Choose a Beat No:</label>
+                            <select
+                                name='beat_no'
+                                id='beat_no'
+                                defaultValue={formInfo.beat_no}
+                                onChange={(e) => setFormInfo({ ...formInfo, beat_no: e.target.value })}
+                            >
+                                <option value="">Select a Beat</option>
+                                {beatsArray.map(({ beatNo }) => (
+                                    <option key={beatNo} value={beatNo}>
+                                        {beatNo}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         <div className="flex flex-col">
                             <label htmlFor="trip_date" className="mb-2 text-xs md:text-sm font-medium text-gray-700">Trip Date:</label>
                             <DatePicker
@@ -79,39 +101,8 @@ const AddNewItem = (props) => {
                                 ))}
                             </select>
                         </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div className="flex flex-col">
-                            <label htmlFor="from_loc" className="mb-2 text-xs md:text-sm font-medium text-gray-700">From Location:</label>
-                            <select
-                                name="from_location"
-                                id="from_loc"
-                                defaultValue={formInfo.from_location}
-                                onChange={(e) => setFormInfo({ ...formInfo, from_location: e.target.value })}
-                                className="border-gray-200 focus:border-gray-500 focus:ring-0 rounded-sm shadow-xs px-2"
-                            >
-                                <option value="" disabled>Select Location</option>
-                                {locations && locations.map(loc => {
-                                    return <option key={loc.id} value={loc.id}>{loc.name}</option>;
-                                })}
-                            </select>
-                        </div>
-                        <div className="flex flex-col">
-                            <label htmlFor="to_loc" className="mb-2 text-xs md:text-sm font-medium text-gray-700">To Location:</label>
-                            <select
-                                name="to_location"
-                                id="to_loc"
-                                defaultValue={formInfo.to_location}
-                                onChange={(e) => setFormInfo({ ...formInfo, to_location: e.target.value })}
-                                className="border-gray-200 focus:border-gray-500 focus:ring-0 rounded-sm shadow-xs px-2"
-                            >
-                                <option value="" disabled>Select location</option>
-                                {locations && locations.map(loc => {
-                                    if (loc.id == formInfo.from_location) return;
-                                    return <option key={loc.id} value={loc.id}>{loc.name}</option>;
-                                })}
-                            </select>
-                        </div>
+
+
                     </div>
 
                     <button type="submit" className="px-4 py-2 font-semibold text-white bg-teal-500 rounded-md shadow-sm hover:bg-teal-600">

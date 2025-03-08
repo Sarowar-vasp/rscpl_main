@@ -98,8 +98,8 @@ const index = (props) => {
 									toast={toast} 
 									reload={loadManiData} 
 									auth={props.auth} 
-									loading={loading.manifest} 
-									locations={props.locations} 
+									loading={loading.manifest}
+									beats={props.beats} 
 									lorries={props.lorries} 
 								/>
 							</TabPanel>
@@ -107,7 +107,7 @@ const index = (props) => {
 								<ItemsList 
 									parties={parties} 
 									bookings={bookings} 
-									manifests={manifests?.data || []} 
+									latestManifests={manifests?.data || []} 
 									reload={loadData} 
 									toast={toast} 
 									{...props} 

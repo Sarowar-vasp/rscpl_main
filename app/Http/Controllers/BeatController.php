@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Beat;
 use App\Models\ActivityLog;
+use App\Models\Location;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -35,13 +36,24 @@ class BeatController extends Controller
     public function get_locations($beat_no)
     {
         $branchId = optional($this->branch)->id;
-        $beats = Beat::with('location')
+        if (!$branchId) {
+            return response()->json(['error' => 'Branch ID not found'], 400);
+        }
+
+        $beatLocations = Beat::where('beat_no', $beat_no)
             ->where('branch_id', $branchId)
-            ->where('beat_no', $beat_no)
             ->get();
 
-        return response()->json($beats);
+        if ($beatLocations->isEmpty()) {
+            return response()->json(['error' => 'No beats found for given beat number'], 404);
+        }
+
+        $locationIds = $beatLocations->pluck('location_id');
+        $locations = Location::whereIn('id', $locationIds)->get();
+
+        return response()->json($locations);
     }
+
 
     public function get_item(Beat $beat)
     {
@@ -88,6 +100,7 @@ class BeatController extends Controller
     public function update(Request $request, Beat $beat)
     {
         $request->validate([
+            'beat_no' => 'nullable|string',
             'location_id' => 'nullable|integer|exists:locations,id',
             'rate' => 'nullable|numeric',
         ]);

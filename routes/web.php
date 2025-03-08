@@ -167,6 +167,7 @@ Route::middleware('auth')->group(function () {
     });
     Route::controller(BeatController::class)->group(function () {
         Route::get('/master/data/beats', 'get_items');
+        Route::get('/master/data/beat/{beat_no}/locations', 'get_locations');
     });
     
     Route::controller(LorryController::class)->group(function () {
@@ -183,6 +184,7 @@ Route::middleware('auth')->group(function () {
     Route::controller(PartyController::class)->group(function () {
         Route::get('/master/data/parties', 'get_items');
         Route::get('/master/data/parties/all', 'get_allitems');
+        Route::get('/master/data/beat/{beat_no}/parties', 'get_items_by_beat');
         Route::get('/master/data/party/{party}', 'get_item');
     });
 

@@ -13,16 +13,6 @@ class Manifest extends Model
     use HasFactory;
     protected $guarded = [];
 
-    public function to_location()
-    {
-        return $this->belongsTo(Location::class, 'to_location');
-    }
-
-    public function from_location()
-    {
-        return $this->belongsTo(Location::class, 'from_location');
-    }
-
     public function lorry()
     {
         return $this->belongsTo(Lorry::class);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Beat;
 use App\Models\Party;
 use App\Models\Booking;
 use App\Models\ActivityLog;
@@ -21,10 +22,31 @@ class PartyController extends Controller
         })->with(['cr_bookings', 'ce_bookings', 'location']);
 
         $items = $query->orderByRaw('CASE WHEN is_consignor = 1 THEN 0 ELSE 1 END')
-                       ->orderBy('name')
-                       ->get();
+            ->orderBy('name')
+            ->get();
 
         return response()->json($items);
+    }
+
+    public function get_items_by_beat($beat_no)
+    {
+        $branchId = optional($this->branch)->id;
+        
+        // Get locations associated with this beat
+        $beatLocations = Beat::where('beat_no', $beat_no)
+            ->where('branch_id', $branchId)
+            ->with('location')
+            ->get()
+            ->pluck('location.id');
+
+        // Get parties belonging to those locations
+        $parties = Party::whereIn('location_id', $beatLocations)
+            ->with(['cr_bookings', 'ce_bookings', 'location'])
+            ->orderByRaw('CASE WHEN is_consignor = 1 THEN 0 ELSE 1 END')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json($parties);
     }
 
 
@@ -46,7 +68,7 @@ class PartyController extends Controller
         }
 
         $query->orderByRaw('CASE WHEN is_consignor = 1 THEN 0 ELSE 1 END')
-              ->orderBy('name');
+            ->orderBy('name');
 
         $items = $query->with('location')->orderBy($orderBy, $order)->paginate($perPage);
         return response()->json($items);

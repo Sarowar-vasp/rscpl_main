@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Beat;
 use App\Models\Item;
 use Inertia\Inertia;
 use App\Models\Lorry;
@@ -77,9 +78,15 @@ class PagesController extends Controller
         $branchId = optional($this->branch)->id;
         $lr = Lorry::where('branch_id', $branchId)->get();
         $ls = Location::where('branch_id', $branchId)->get();
+        $beats = Beat::with('location')
+            ->where('branch_id', $branchId)
+            ->get()
+            ->groupBy('beat_no');
+
         return Inertia::render('Dashboard/Transaction/Manifest/index', [
             'lorries' => $lr,
-            'locations' => $ls
+            'locations' => $ls,
+            'beats' => $beats
         ]);
     }
 
@@ -91,11 +98,16 @@ class PagesController extends Controller
         $items = Item::where('branch_id', $branchId)->get();
         $lr = Lorry::where('branch_id', $branchId)->get();
         $ls = Location::where('branch_id', $branchId)->get();
+        $beats = Beat::with('location')
+            ->where('branch_id', $branchId)
+            ->get()
+            ->groupBy('beat_no');
         return Inertia::render('Dashboard/Transaction/Booking/index', [
             'branches' => $brnchs,
             'items' => $items,
             'lorries' => $lr,
-            'locations' => $ls
+            'locations' => $ls,
+            'beats' => $beats
         ]);
     }
 

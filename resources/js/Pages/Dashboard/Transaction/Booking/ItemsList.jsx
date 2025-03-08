@@ -8,16 +8,29 @@ import BookingStatus from './BookingStatus';
 import { Dialog } from 'primereact/dialog';
 import EditBookingItem from './EditBookingItem';
 import imageCompression from 'browser-image-compression';
+import axios from 'axios';
 
 const ItemsList = (props) => {
-    const { bookings, reload, toast, manifests, items, locations, parties } = props;
+    const { bookings, reload, toast, latestManifests, items, locations, parties } = props;
     const [searchTxt, setSearchTxt] = useState('');
     const [perPage, setPerPage] = useState(10);
     const [delivCount, setDelivCount] = useState(0);
     const [showStatus, setShowStatus] = useState('');
+    const [manifests, setManifests] = useState(latestManifests);
 
     const [consignorId, setConsignorId] = useState('');
     const [consigneeId, setConsigneeId] = useState('');
+
+    const loadManiData = (params) => {
+        axios.get('/data/manifests?paginate=no', { params })
+            .then(res => {
+                setManifests(res.data);
+            })
+            .catch(err => {
+                console.error(err.message);
+            });
+    }
+
 
     const handleLimitChange = (e) => {
         if (e.target.value == 'All' && (bookings?.total > 0)) {
@@ -102,7 +115,7 @@ const ItemsList = (props) => {
                             <div className="flex flex-col">
                                 <label className="text-xs font-semibold text-blue-800" htmlFor="show_limit">Show</label>
                                 <select id={'show_limit'} value={perPage >= bookings.total ? 'All' : perPage} onChange={handleLimitChange}>
-                                    {[5, 10, 20, 50, 100, 'All'].map(num => <option key={num} value={num}>{num}</option>)}
+                                    {[20, 50, 100, 'All'].map(num => <option key={num} value={num}>{num}</option>)}
                                 </select>
                             </div>
                             <div className="flex flex-col">

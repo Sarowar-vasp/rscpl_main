@@ -114,21 +114,21 @@ class BookingController extends Controller
                 $m->whereBetween('trip_date', [$from_date, $to_date]);
             }
         })
-        ->with(['document', 'statuses', 'manifest.to_location', 'manifest.branch', 'manifest.lorry', 'consignor.location', 'consignee.location', 'items.item_quantities'])
+        ->with(['document', 'statuses', 'manifest.branch', 'manifest.lorry', 'consignor.location', 'consignee.location', 'items.item_quantities'])
         ->get();
 
-        foreach ($query as $booking) {
-            if ($booking->manifest) {
-                $toLoc = Location::find($booking->manifest->to_location);
+        // foreach ($query as $booking) {
+        //     if ($booking->manifest) {
+        //         $toLoc = 'test';
 
-                if($toLoc && !empty($toLoc->beat_no)) {
-                    $rateInfo = Rate::where('beat_no', $toLoc->beat_no)->where('branch_id',$branchId)->first();
-                    $booking->manifest->rate = $rateInfo ? $rateInfo->rate : 0;
-                } else {
-                    $booking->manifest->rate = 0;
-                }
-            }
-        }
+        //         if($toLoc && !empty($toLoc->beat_no)) {
+        //             $rateInfo = Rate::where('beat_no', $booking->manifest->beat_no)->where('branch_id',$branchId)->first();
+        //             $booking->manifest->rate = $rateInfo ? $rateInfo->rate : 0;
+        //         } else {
+        //             $booking->manifest->rate = 0;
+        //         }
+        //     }
+        // }
         
         return response()->json($query);
     }
@@ -150,7 +150,7 @@ class BookingController extends Controller
                 $m->whereBetween('trip_date', [$from_date, $to_date]);
             }
         })
-            ->with(['manifest.branch', 'manifest.lorry', 'manifest.to_location', 'consignor.location', 'consignee.location', 'items.item_quantities'])
+            ->with(['manifest.branch', 'manifest.lorry', 'consignor.location', 'consignee.location', 'items.item_quantities'])
             ->get();
 
         return response()->json($query);
@@ -178,7 +178,7 @@ class BookingController extends Controller
                 $m->whereBetween('trip_date', [$from_date, $to_date]);
             }
         })
-            ->with(['document', 'statuses', 'manifest.branch', 'manifest.to_location', 'manifest.lorry', 'consignor.location', 'consignee.location', 'items.item_quantities'])
+            ->with(['document', 'statuses', 'manifest.branch', 'manifest.lorry', 'consignor.location', 'consignee.location', 'items.item_quantities'])
             ->get();
 
         return response()->json($query);
@@ -187,7 +187,7 @@ class BookingController extends Controller
     public function get_item(Booking $booking)
     {
         $branchId = optional($this->branch)->id;
-        $booking->load(['document', 'statuses', 'manifest.branch', 'manifest.to_location', 'manifest.lorry', 'consignor.location', 'consignee.location', 'items.item_quantities']);
+        $booking->load(['document', 'statuses', 'manifest.branch', 'manifest.lorry', 'consignor.location', 'consignee.location', 'items.item_quantities']);
         if ($booking->manifest->branch->id !== $branchId) {
             return response()->json(['error' => 'Booking not found for the specified branch.'], 404);
         }
@@ -205,7 +205,6 @@ class BookingController extends Controller
         $booking->load([
             'manifest.branch',
             'manifest.lorry',
-            'manifest.to_location',
             'consignor.location',
             'consignee.location',
             'items.item_quantities',
@@ -226,7 +225,6 @@ class BookingController extends Controller
         $booking->load([
             'manifest.branch',
             'manifest.lorry',
-            'manifest.to_location',
             'consignor.location',
             'consignee.location',
             'items.item_quantities',
@@ -234,7 +232,6 @@ class BookingController extends Controller
         ]);
         return Inertia::render('Dashboard/Transaction/Booking/PrintItem', ['booking' => $booking, 'is_return' => false]);
     }
-    
     /**
      * Store a newly created resource in storage.
      */

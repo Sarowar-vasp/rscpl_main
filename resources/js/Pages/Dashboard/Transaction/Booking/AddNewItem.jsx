@@ -32,8 +32,8 @@ const AddNewItem = (props) => {
     const [locations, setLocations] = useState([]);
     const [parties, setParties] = useState([]);
 
-    const loadLocations = () => {
-        axios.get('/master/data/locations?paginate=no')
+    const loadLocations = (beat_no) => {
+        axios.get(`/master/data/beat/${beat_no}/locations`)
             .then(res => {
                 setLocations(res.data);
             }).catch(er => {
@@ -41,18 +41,26 @@ const AddNewItem = (props) => {
             });
     }
 
-    const loadParties = () => {
-        axios.get('/master/data/parties/all')
+    const loadParties = (beat_no) => {
+        axios.get(`/master/data/beat/${beat_no}/parties`)
             .then(res => {
                 setParties(res.data);
             }).catch(er => {
                 toast.current.show({ label: 'Error', severity: 'error', detail: er.message })
             });
     }
+
+
     useEffect(() => {
-        loadLocations();
-        loadParties();
-    }, []);
+        const selectedManifest = manifests.find(mani => mani.id == formInfo.manifest_id);
+        if (selectedManifest && selectedManifest.beat_no) {
+            loadLocations(selectedManifest.beat_no);
+            loadParties(selectedManifest.beat_no);
+            console.log('loading');            
+        }else{
+            console.log('no beat');            
+        }
+    }, [formInfo.manifest_id]);
 
 
     const handleSubmit = (e) => {
@@ -208,7 +216,7 @@ const AddNewItem = (props) => {
                                 />
                             </div>
 
-                           
+
 
                             <div className={`col-span-3 flex flex-col `}>
                                 <label htmlFor="consignor" className="mb-2 text-xs font-medium text-gray-700">Consignor:</label>
@@ -315,7 +323,7 @@ const BookingItems = (props) => {
         amount: 0,
         itemsInfo: items.map(ix => ({ name: ix.name, qty: 0 })),
         weight: 0,
-        remarks:''
+        remarks: ''
     });
 
     const handleItemInfoChange = (updatedItem) => {
@@ -337,7 +345,7 @@ const BookingItems = (props) => {
             amount: 0,
             itemsInfo: items.map(ix => ({ name: ix.name, qty: 0 })),
             weight: 0,
-            remarks:''
+            remarks: ''
         });
     }
 
@@ -492,7 +500,7 @@ const BookingItems = (props) => {
                             <input type="text"
                                 name="amount"
                                 id="inv_amt"
-                                value={parseInt(formItem.amount) ? parseInt(formItem.amount): 0}
+                                value={parseInt(formItem.amount) ? parseInt(formItem.amount) : 0}
                                 onChange={(e) => setFormItem({ ...formItem, amount: e.target.value })}
                                 className="w-full text-xs  border-none outline-none focus:ring-0 rounded-sm shadow-xs px-2 text-center"
                                 placeholder='amount'
@@ -512,7 +520,7 @@ const BookingItems = (props) => {
                             <input type="text"
                                 name="weight"
                                 id="grss_weight"
-                                value={parseInt(formItem.weight) ? parseInt(formItem.weight): 0}
+                                value={parseInt(formItem.weight) ? parseInt(formItem.weight) : 0}
                                 onChange={(e) => setFormItem({ ...formItem, weight: e.target.value })}
                                 className="w-full text-xs  border-none outline-none focus:ring-0 rounded-sm shadow-xs px-2 text-center"
                                 placeholder='Gross Weight'
