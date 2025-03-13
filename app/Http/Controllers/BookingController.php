@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
-use App\Models\Rate;
+use App\Models\Beat;
 use Inertia\Inertia;
 use App\Models\Booking;
 use App\Models\Document;
@@ -14,9 +14,10 @@ use App\Models\BookingItem;
 use Illuminate\Http\Request;
 use App\Models\BookingStatus;
 use App\Models\ReturnBooking;
-use Illuminate\Support\Facades\DB;
 
+use Illuminate\Support\Facades\DB;
 use App\Models\BookingItemQuantity;
+use App\Models\Party;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -65,7 +66,7 @@ class BookingController extends Controller
 
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
-                $q->where('cn_no', 'LIKE', "%" . $search . "%")->orWhereHas("items", function ($qi) use ($search){
+                $q->where('cn_no', 'LIKE', "%" . $search . "%")->orWhereHas("items", function ($qi) use ($search) {
                     $qi->where('invoice_no', 'LIKE', "%" . $search . "%");
                 });
             });
@@ -97,41 +98,100 @@ class BookingController extends Controller
         return response()->json($bookings);
     }
 
+
+
+    // public function booking_reports(Request $request)
+    // {
+    //     $from_date = Carbon::parse($request->from_date)->startOfDay();
+    //     $to_date = Carbon::parse($request->to_date)->endOfDay();
+
+    //     $query = Booking::query();
+    //     $branchId = optional($this->branch)->id;
+
+    //     $query = $query->whereHas('manifest', function ($m) use ($branchId, $from_date, $to_date) {
+    //         $m->where('branch_id', $branchId);
+
+    //         if ($from_date->format('Y-m-d') == $to_date->format('Y-m-d')) {
+    //             $m->whereDate('trip_date', $from_date->format('Y-m-d'));
+    //         } else {
+    //             $m->whereBetween('trip_date', [$from_date, $to_date]);
+    //         }
+    //     })
+    //         ->with(['document', 'statuses', 'manifest.branch', 'manifest.lorry', 'consignor.location', 'consignee.location', 'items.item_quantities'])
+    //         ->get();
+    //     // group bookings my manifest, for each manifest there is a beat_no, get beats(beat_no, rate, location_id) by beat_no,
+    //     // get consignee locations of bookings of each manifest separately
+    //     // prepare an union set of beat_location,
+    //     // select beat_location with highest rate
+    //     // pass rate along with manifest 
+    //     foreach ($query as $booking) {
+    //         if ($booking->manifest) {
+    //             $beatLocations = Beat::where('beat_no', $booking->manifest->beat_no)
+    //                 ->where('branch_id', $branchId)
+    //                 ->get();
+    //             //$consigneeLocs = $booking->manifest->bookings[x]->consignee->location;
+
+    //             $booking->manifest->rate = 0;
+    //         }
+    //     }
+
+    //     return response()->json($query);
+    // }
+
     public function booking_reports(Request $request)
     {
         $from_date = Carbon::parse($request->from_date)->startOfDay();
-        $to_date = Carbon::parse($request->to_date)->endOfDay();
+        $to_date   = Carbon::parse($request->to_date)->endOfDay();
+        $branchId  = optional($this->branch)->id;
 
-        $query = Booking::query();
-        $branchId = optional($this->branch)->id;
+        // Fetch bookings with manifests & related data within the date range
+        $bookings = Booking::whereHas('manifest', function ($query) use ($branchId, $from_date, $to_date) {
+            $query->where('branch_id', $branchId);
 
-        $query = $query->whereHas('manifest', function ($m) use ($branchId, $from_date, $to_date) {
-            $m->where('branch_id', $branchId);
-
-            if ($from_date->format('Y-m-d') == $to_date->format('Y-m-d')) {
-                $m->whereDate('trip_date', $from_date->format('Y-m-d'));
+            if ($from_date->equalTo($to_date)) {
+                $query->whereDate('trip_date', $from_date);
             } else {
-                $m->whereBetween('trip_date', [$from_date, $to_date]);
+                $query->whereBetween('trip_date', [$from_date, $to_date]);
             }
         })
-        ->with(['document', 'statuses', 'manifest.branch', 'manifest.lorry', 'consignor.location', 'consignee.location', 'items.item_quantities'])
-        ->get();
+            ->with([
+                'manifest.branch',
+                'manifest.lorry',
+                'manifest.bookings.consignee.location', // Fetch consignee location directly
+                'consignor.location',
+                'consignee.location',
+                'items.item_quantities'
+            ])
+            ->get();
 
-        // foreach ($query as $booking) {
-        //     if ($booking->manifest) {
-        //         $toLoc = 'test';
+        // Group by manifest ID
+        $groupedManifests = $bookings->groupBy('manifest_id');
 
-        //         if($toLoc && !empty($toLoc->beat_no)) {
-        //             $rateInfo = Rate::where('beat_no', $booking->manifest->beat_no)->where('branch_id',$branchId)->first();
-        //             $booking->manifest->rate = $rateInfo ? $rateInfo->rate : 0;
-        //         } else {
-        //             $booking->manifest->rate = 0;
-        //         }
-        //     }
-        // }
-        
-        return response()->json($query);
+        foreach ($groupedManifests as $manifestId => $bookingsForManifest) {
+            $manifest = $bookingsForManifest->first()->manifest;
+
+            if (!$manifest || empty($manifest->beat_no)) {
+                continue;
+            }
+            $beatLocations = Beat::where('beat_no', $manifest->beat_no)
+                ->where('branch_id', $branchId)
+                ->get();
+
+                $consigneeLocationIds = $bookingsForManifest->map(function ($booking) {
+                $consignee = Party::find($booking->consignee);
+                return optional($consignee)->location_id;
+            })->filter()->unique();
+
+            $filteredBeats = $beatLocations->whereIn('location_id', $consigneeLocationIds);
+            // Get highest rate beat
+            $maxRateBeat = $filteredBeats->sortByDesc('rate')->first();
+            $manifest->rate = $maxRateBeat ? $maxRateBeat->rate : 0;
+            
+        }
+
+        return response()->json($bookings);
     }
+
 
     public function return_booking_reports(Request $request)
     {

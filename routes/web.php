@@ -21,21 +21,28 @@ use App\Http\Controllers\FinSessionController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\BeatController;
 use App\Http\Controllers\BookingItemController;
-use App\Http\Controllers\RateController;
 use App\Http\Controllers\ReturnBookingController;
 
 Route::controller(PagesController::class)->group(function () {
     Route::get('/', 'welcome');
 });
 
-Route::get('/test', function(){
-    return "Test";
-});
+// Route::get('/test', function(){
+//     return "Test";
+// });
 
-Route::get('/linkstorage', function() {
-    Artisan::call('storage:link');
-    return 'Storage link created successfully.';
-});
+// Route::get('/linkstorage', function() {
+//     Artisan::call('storage:link');
+//     return 'Storage link created successfully.';
+// });
+// Route::get('/fix-db-connections', function () {
+//     Artisan::call('queue:restart');
+//     Artisan::call('cache:clear');
+//     Artisan::call('config:clear');
+//     Artisan::call('view:clear');
+//     Artisan::call('optimize:clear');
+//     return "Database connection issues fixed! ✅";
+// });
 
 
 // auth routes
@@ -82,12 +89,6 @@ Route::middleware('auth')->group(function () {
             Route::post('/master/data/new/beat', 'store');
             Route::put('/master/data/beat/{beat}', 'update');
             Route::delete('/master/data/beat/{beat}', 'destroy');
-        });
-       
-        Route::controller(RateController::class)->group(function () {
-            Route::post('/master/data/new/rate', 'store');
-            Route::put('/master/data/rate/{rate}', 'update');
-            Route::delete('/master/data/rate/{rate}', 'destroy');
         });
 
         Route::controller(BranchController::class)->group(function () {
@@ -162,10 +163,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/master/data/location/{location}', 'get_location');
     });
 
-    Route::controller(RateController::class)->group(function () {
-        Route::get('/master/data/rates', 'get_items');
-    });
     Route::controller(BeatController::class)->group(function () {
+        Route::get('/master/data/beats/{beat}', 'get_item');
         Route::get('/master/data/beats', 'get_items');
         Route::get('/master/data/beat/{beat_no}/locations', 'get_locations');
     });

@@ -45,7 +45,7 @@ const BookingReport = () => {
         if (formInfo.from_date && formInfo.to_date) {
             const formattedFromDate = new Date(formInfo.from_date).toISOString().split('T')[0];
             const formattedToDate = new Date(formInfo.to_date).toISOString().split('T')[0];
-    
+
             axios.post('/data/report/booking', {
                 from_date: formattedFromDate,
                 to_date: formattedToDate
@@ -53,42 +53,44 @@ const BookingReport = () => {
                 setBookings(res.data);
             }).catch(err => {
                 console.log(err.message);
+            }).finally(() => {
+                setLoading(false);
             });
         } else {
             setBookings([]);
             setLoading(false); // Stop loading if no date range is selected
         }
     };
-    
+
     useEffect(() => {
         if (!bookings || bookings.length === 0) {
             setInvoices([]);
             setLoading(false);
             return;
         }
-    
+
         setLoading(true); // Start loading before processing invoices
-    
+
         const processInvoices = async () => {
             const itemsWithDetails = bookings.flatMap(booking =>
                 booking.items.map(item => ({ ...item, booking: booking }))
             );
-    
+
             itemsWithDetails.forEach(iwd => {
                 iwd.item_quantities.sort((a, b) => a.id - b.id);
             });
-    
+
             setInvoices(itemsWithDetails);
             setLoading(false); // Only stop loading after invoices are fully set
         };
-    
+
         processInvoices();
     }, [bookings]);
-    
+
     useEffect(() => {
         getItems();
     }, []);
-    
+
 
 
     return (

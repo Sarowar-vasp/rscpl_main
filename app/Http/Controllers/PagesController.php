@@ -44,7 +44,7 @@ class PagesController extends Controller
 
     function rate_master()
     {
-        return Inertia::render('Dashboard/Master/Rate/index');
+        abort(404);
     }
 
     function beat_master()

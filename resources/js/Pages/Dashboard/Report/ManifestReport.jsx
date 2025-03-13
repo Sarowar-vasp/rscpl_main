@@ -51,8 +51,10 @@ const ManifestReport = (props) => {
     const [bookings, setBookings] = useState([]);
     const [invoices, setInvoices] = useState([]);
     const [formInfo, setFormInfo] = useState(getDefaultDates());
+    const [loading, setLoading] = useState(true);
 
     const getItems = () => {
+        setLoading(true);
         if (formInfo.from_date && formInfo.to_date) {
             const formattedFromDate = new Date(formInfo.from_date).toISOString().split('T')[0];
             const formattedToDate = new Date(formInfo.to_date).toISOString().split('T')[0];
@@ -64,14 +66,18 @@ const ManifestReport = (props) => {
                 setBookings(res.data);
             }).catch(err => {
                 console.log(err.message);
+            }).finally(() => {
+                setLoading(false);
             });
         } else {
-            setBookings([])
+            setBookings([]);
+            setLoading(false);
         }
     }
 
 
     useEffect(() => {
+        setLoading(true);
         if (bookings && bookings.length > 0) {
 
             const itemsWithDetails = bookings.flatMap(booking => {
@@ -83,6 +89,7 @@ const ManifestReport = (props) => {
         } else {
             setInvoices([]);
         }
+        setLoading(false);
     }, [bookings]);
 
     useEffect(() => {
@@ -112,7 +119,11 @@ const ManifestReport = (props) => {
             </div>
             <hr />
             <div className="flex flex-col my-3 mx-5 border rounded-lg">
-                {invoices && invoices.length > 0 ? (
+                {loading ? (
+                    <div className="w-full flex justify-center items-center my-8">
+                        <LoadingAnimation />
+                    </div>
+                ) : invoices && invoices.length > 0 ? (
                     <InvoiceDetailsTable invoices={invoices} textShorten={textShorten} />
                 ) : ("")}
             </div>
@@ -304,6 +315,8 @@ const getDtStr = (dx) => {
 
 const ExportCSVData = ({ invoices, setOpen, outbond = 'Upcountry' }) => {
     // const uniqueConsignors = Array.from(new Set(invoices.map(inv => inv.booking?.consignor?.name).filter(Boolean)));
+    const [isLoading, setIsLoading] = useState(false);
+
     const getManiWeight = (maniId) => {
         return invoices
             .filter(inv => inv.booking?.manifest?.id === maniId)
@@ -315,17 +328,19 @@ const ExportCSVData = ({ invoices, setOpen, outbond = 'Upcountry' }) => {
         const manifestNo = inv.booking.manifest.manifest_no.length > 4 ? inv.booking.manifest.manifest_no : `${getDtStr(inv.booking.manifest.trip_date)}${inv.booking.manifest.manifest_no}`;
 
         let consignor_name = inv.booking?.consignor?.name;
-
         let str_x = consignor_name.trim().replace(/[.\s]/g, '').toLowerCase();
-        
-        let isJKIL = ['jk','tyres'].some(subStr => str_x.includes(subStr));
-        let isCIL = ['caven','cavein', 'ndish'].some(subStr => str_x.includes(subStr));
+
+        let isJKIL = ['jk', 'tyres'].some(subStr => str_x.includes(subStr));
+        let isCIL = ['caven', 'cavein', 'ndish'].some(subStr => str_x.includes(subStr));
 
         const manifestWeight = getManiWeight(inv.booking.manifest.id);
         const claimRatio = (manifestWeight > 0) ? (inv.weight / manifestWeight * 100) : 0;
 
         const dealerLocation = inv.booking.ship_to_party ? inv.booking.party_location : inv.booking.consignee.location?.name;
+
         const destination = inv.booking.manifest.to_location?.name;
+
+        const beat_no = inv.booking.manifest?.beat_no || '';
         const rate = inv.booking.manifest.rate ? inv.booking.manifest.rate : 0;
         const vehicleNum = inv.booking.manifest?.lorry?.lorry_number;
         return {
@@ -345,7 +360,7 @@ const ExportCSVData = ({ invoices, setOpen, outbond = 'Upcountry' }) => {
             'CN No': inv.booking.cn_no,
             'Total Qty': qty,
             'Weight': inv.weight,
-            'Route': '',
+            'Route': beat_no,
             'Rate': rate,
             'Claim Ratio(%)': Number(claimRatio).toFixed(2),
             'CIL Freight Amt (INR)': isCIL ? Number(claimRatio * rate).toFixed(2) : '',
@@ -366,5 +381,36 @@ const ExportCSVData = ({ invoices, setOpen, outbond = 'Upcountry' }) => {
         >
             Export
         </CSVLink>
+    );
+};
+
+
+const LoadingAnimation = () => {
+    const loadingTexts = ["Loading", "Loading .", "Loading . .", "Loading . . ."];
+    const [textIndex, setTextIndex] = useState(0);
+    const [showStandBy, setShowStandBy] = useState(false);
+
+    useEffect(() => {
+        let interval;
+
+        const cycleLoadingText = () => {
+            setTextIndex((prev) => (prev + 1) % loadingTexts.length);
+        };
+
+        const startLoadingAnimation = () => {
+            interval = setInterval(cycleLoadingText, 1000);
+        };
+
+        startLoadingAnimation();
+
+        return () => {
+            clearInterval(interval);
+        };
+    }, []);
+
+    return (
+        <div className="text-lg font-semibold text-gray-700 animate-pulse">
+            {loadingTexts[textIndex]}
+        </div>
     );
 };
